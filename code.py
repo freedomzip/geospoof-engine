@@ -1,107 +1,69 @@
 # data_exporter.py
-# This file turns simulated GPS points into a real GPX file
+# This program takes GPS points and saves them as a GPX file
 # Author: Solomon Daniel
 
-import xml.etree.ElementTree as ET   # This helps us create XML (the language GPX uses)
-from datetime import datetime       # To add the current time
-import os                           # To get the full file path
+import xml.etree.ElementTree as ET   # Tool that helps us create XML/GPX files
+import os                           # Tool that helps us work with files
 
 
 class DataExporter:
-    """
-    This class has one main job:
-    Take a list of GPS points and save them as a .gpx file
-    """
+    """This class is responsible for creating and saving the GPX file"""
 
     def __init__(self):
         # This runs when we create the object
-        self.creator = "GeoSpoof Engine"   # Name that appears inside the GPX file
+        self.creator = "GeoSpoof Engine"   # Name that will appear inside the GPX file
 
     def export_to_gpx(self, points, filename="simulated_track.gpx"):
         """
-        Main function you will call.
-
-        points   = list of dictionaries. Each dictionary must have "lat" and "lon"
-                   Example: [{"lat": 6.52, "lon": 3.37}, {"lat": 6.53, "lon": 3.38}]
-        filename = the name of the file you want to create
+        This is the main function.
+        It receives a list of GPS points and saves them into a GPX file.
         """
 
-        # ---------- Safety check ----------
+        # Check if there are any points
         if not points:
-            print("Error: No points given. Cannot create file.")
+            print("No points to save.")
             return
 
-        # ---------- 1. Create the root of the GPX file ----------
-        # Every GPX file starts with a <gpx> tag
-        root = ET.Element("gpx")
-        root.set("version", "1.1")
-        root.set("creator", self.creator)
-        root.set("xmlns", "http://www.topografix.com/GPX/1/1")
+        # Create the main container of the GPX file
+        root = ET.Element("gpx", version="1.1", creator="GeoSpoof Engine")
 
-        # ---------- 2. Add a simple name for the track ----------
-        metadata = ET.SubElement(root, "metadata")
-        name = ET.SubElement(metadata, "name")
-        name.text = "GeoSpoof Simulated Track"
-
-        # ---------- 3. Create the track structure ----------
-        # GPX structure looks like this:
-        # <gpx>
-        #   <trk>
-        #     <trkseg>
-        #       <trkpt ...>
-        #       <trkpt ...>
+        # Create a track (the journey)
         track = ET.SubElement(root, "trk")
-        track_name = ET.SubElement(track, "name")
-        track_name.text = "Simulated Journey"
 
-        segment = ET.SubElement(track, "trkseg")   # One segment that holds all points
+        # Create a segment inside the track (where all points will be stored)
+        segment = ET.SubElement(track, "trkseg")
 
-        # ---------- 4. Add every GPS point ----------
+        # Go through each GPS point one by one
         for point in points:
             # Create one track point
-            trkpt = ET.SubElement(segment, "trkpt")
-            trkpt.set("lat", str(point["lat"]))   # latitude
-            trkpt.set("lon", str(point["lon"]))   # longitude
+            trkpt = ET.SubElement(segment, "trkpt", 
+                                  lat=str(point["lat"]), 
+                                  lon=str(point["lon"]))
 
-            # Optional: add elevation if it exists
+            # If the point has elevation, add it
             if "ele" in point:
                 elevation = ET.SubElement(trkpt, "ele")
                 elevation.text = str(point["ele"])
 
-            # Optional: add time if it exists
-            if "time" in point:
-                time_tag = ET.SubElement(trkpt, "time")
-                time_tag.text = str(point["time"])
-
-        # ---------- 5. Save the file ----------
-        # Turn the tree into an actual XML file
+        # Turn everything into a full XML document
         tree = ET.ElementTree(root)
 
-        # Make the XML look neat (nice indentation)
-        try:
-            ET.indent(tree, space="  ")
-        except:
-            pass   # Older Python versions don't have this, so we ignore the error
-
-        # Write the file to disk
+        # Save the file on the computer
         tree.write(filename, encoding="utf-8", xml_declaration=True)
 
-        # Tell the user where the file was saved
-        full_path = os.path.abspath(filename)
-        print("Success! GPX file saved at:")
-        print(full_path)
+        # Tell the user that the file was saved successfully
+        print(f"File saved successfully: {filename}")
 
-        return full_path
+        return filename
 
 
-# ============================================================
-# TEST CODE - You can run this file directly to see it work
-# ============================================================
+# ==================== TEST SECTION ====================
+# This part only runs when you run this file directly
 if __name__ == "__main__":
 
-    # Example GPS points (pretend these came from the simulation)
+    # Sample GPS points for testing
     sample_points = [
-        {"lat": 6.5244, "lon": 3.3792, "ele": 40},   # Lagos
+        {"lat": 6.5244, "lon": 3.3792, "ele": 40},
         {"lat": 6.5250, "lon": 3.3800, "ele": 41},
         {"lat": 6.5258, "lon": 3.3815, "ele": 42},
         {"lat": 6.5265, "lon": 3.3830, "ele": 43},
@@ -110,5 +72,3 @@ if __name__ == "__main__":
     # Create the exporter and save the file
     exporter = DataExporter()
     exporter.export_to_gpx(sample_points, "my_first_track.gpx")
-
-    print("\nOpen the file 'my_first_track.gpx' in Google Earth or any map app to see the track.")
